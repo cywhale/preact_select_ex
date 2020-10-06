@@ -1,8 +1,12 @@
 //ref: https://react-select.com/advanced
 //import React from 'react';
-import { useState } from 'preact/hooks';
+import React from "preact/compat";
+//import ReactDOM from "preact/compat";
+//import { useState } from 'preact/hooks';
 import Select, { components } from 'react-select';
 import { SortableContainer, SortableElement } from 'react-sortable-hoc';
+//import { options } from "preact";
+//options.debounceRendering = setTimeout;
 
 function arrayMove(array, from, to) {
   array = array.slice();
@@ -33,7 +37,7 @@ const colourOptions = [
   { value: 'cyan', label: 'cyan' },
   { value: 'blue', label: 'blue' }
 ]
-  const [selected, setSelected] = useState([
+  const [selected, setSelected] = React.useState([
     colourOptions[4],
     colourOptions[5],
   ]);
@@ -43,7 +47,7 @@ const colourOptions = [
   const onSortEnd = ({ oldIndex, newIndex }) => {
     const newValue = arrayMove(selected, oldIndex, newIndex);
     setSelected(newValue);
-    console.log('Values sorted:', newValue.map(i => i.value));
+    //console.log('Values sorted:', newValue.map(i => i.value));
   };
 
   return (
