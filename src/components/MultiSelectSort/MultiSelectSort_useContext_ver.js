@@ -1,12 +1,8 @@
-//useRef version ref/querySelector
-//https://codesandbox.io/s/preactsortablemultiselect-forked-j6mwy?file=/src/MultiSelectSort.js
-//useContext Version
 //https://github.com/preactjs/preact/issues/2790
 //https://codesandbox.io/s/preactsortablemultiselect-forked-zw50w?file=/src/MultiSelectSort.js:70-149
 //ref: https://react-select.com/advanced
 //import React from 'react';
-//import React, { createContext, useCallback, useContext } from "preact/compat";
-import React, { findDOMNode, useRef } from "preact/compat";
+import React, { createContext, useCallback, useContext } from "preact/compat";
 //import ReactDOM from "preact/compat";
 //import { useState } from 'preact/hooks';
 import Select, { components } from 'react-select';
@@ -20,19 +16,30 @@ function arrayMove(array, from, to) {
   return array;
 }
 
-const SortableMultiValue = SortableElement((props) => {
-  // this prevents the menu from being opened/closed when the user clicks
-  // on a value to begin dragging it. ideally, detecting a click (instead of
-  // a drag) would still focus the control and toggle the menu, but that
-  // requires some magic with refs that are out of scope for this example
-  const onMouseDown = (e) => {
-    e.preventDefault();
-    // e.stopPropagation();
-  };
-  const innerProps = { onMouseDown };
-  return <components.MultiValue {...props} innerProps={innerProps} />;
-});
-const SortableSelect = SortableContainer(Select);
+const SortableMultiValue = SortableElement(components.MultiValue);
+const SortableValueContainer = SortableContainer(components.ValueContainer);
+
+function ValueContainer(props) {
+  console.log("ValueContainer", props);
+
+  const onSortEnd = useContext(onSortEndContext);
+
+  return (
+    <SortableValueContainer
+      // react-sortable-hoc props:
+      axis="xy"
+      onSortEnd={onSortEnd}
+      distance={4}
+      // small fix for https://github.com/clauderic/react-sortable-hoc/pull/352:
+      // getHelperDimensions={({ node }) => node.getBoundingClientRect()}
+      {...props}
+    />
+  );
+}
+
+// const SortableControl = SortableContainer(components.Control);
+
+const onSortEndContext = createContext();
 
 function Control(props) {
   return (
@@ -49,7 +56,6 @@ function Control(props) {
             if (target.className.indexOf("-multiValue") !== -1) {
               return;
             }
-
             target = target.parentElement;
           }
 
@@ -78,38 +84,29 @@ const MultiSelectSort = () => {
 
   const onChange = selectedOptions => setSelected(selectedOptions);
 
-  const onSortEnd = ({ oldIndex, newIndex }) => {
-    const newValue = arrayMove(selected, oldIndex, newIndex);
-    setSelected(newValue);
-    //console.log('Values sorted:', newValue.map(i => i.value));
-  };
-
-  const ref = useRef(null);
+  const onSortEnd = useCallback(
+    ({ oldIndex, newIndex }) => {
+      const newValue = arrayMove(selected, oldIndex, newIndex);
+      setSelected(newValue);
+    },
+    [selected, setSelected]
+  );
 
   return (
-    <div ref={ref}>
-      <SortableSelect
-        // react-sortable-hoc props:
-        axis="xy"
-        onSortEnd={onSortEnd}
-        distance={4}
-        getContainer={() => {
-          return ref.current.querySelector('[class*="control"]');
-        }}
-        // small fix for https://github.com/clauderic/react-sortable-hoc/pull/352:
-        getHelperDimensions={({ node }) => node.getBoundingClientRect()}
-        // react-select props:
+    <onSortEndContext.Provider value={onSortEnd}>
+      <Select
         isMulti
         options={colourOptions}
         value={selected}
         onChange={onChange}
         components={{
           MultiValue: SortableMultiValue,
-          Control
+          Control,
+          ValueContainer
         }}
         closeMenuOnSelect={false}
       />
-    </div>
+    </onSortEndContext.Provider>
   );
 };
 export default MultiSelectSort;
